@@ -7,7 +7,8 @@
       <div class="chat-body" ref="chatWindowRef">
         <div v-for="(message, index) in messages" :key="index" 
              :class="['chat-message', message.type]">
-          <div class="bubble">{{ message.content }}</div>
+          <div class="bubble" v-if="message.type === 'right'">{{ message.content }}</div>
+          <div class="bubble markdown-body" v-else v-html="renderMarkdown(message.content)"></div>
         </div>
       </div>
       <div class="chat-footer">
@@ -33,6 +34,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { marked } from 'marked';
+import 'highlight.js/styles/github.css';
 
 interface Props {
   initialMessage?: string;
@@ -167,6 +170,19 @@ onUnmounted(() => {
   document.removeEventListener('touchmove', handleDragging);
   document.removeEventListener('touchend', stopDragging);
 });
+
+// 配置 marked
+marked.setOptions({
+  breaks: true,    // 允许换行
+  gfm: true,       // 启用 GitHub 风格的 Markdown 
+});
+
+// 添加 Markdown 渲染函数
+const renderMarkdown = (content: string) => {
+  // 处理换行符，确保正确渲染
+  const processedContent = content.replace(/\\n/g, '\n').replace(/\n/g, '  \n');
+  return marked.parse(processedContent, { breaks: true });
+};
 </script>
 
 <style scoped>
@@ -311,5 +327,65 @@ onUnmounted(() => {
   to {
     transform: rotate(1turn);
   }
+}
+
+.markdown-body {
+  text-align: left;
+}
+
+.markdown-body :deep(p) {
+  margin: 0;
+}
+
+.markdown-body :deep(pre) {
+  margin: 8px 0;
+  padding: 8px;
+  background-color: #f6f8fa;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.markdown-body :deep(code) {
+  font-family: Consolas, Monaco, 'Andale Mono', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-body :deep(a) {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-body :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid #ddd;
+  padding: 6px;
+}
+
+.markdown-body :deep(blockquote) {
+  margin: 8px 0;
+  padding-left: 1em;
+  border-left: 4px solid #ddd;
+  color: #666;
+}
+
+.markdown-body :deep(br) {
+  display: block;
+  content: "";
+  margin: 8px 0;
 }
 </style>
