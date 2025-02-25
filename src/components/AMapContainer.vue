@@ -98,23 +98,6 @@ export default {
   height: 95vh;
 }
 
-.info-title {
-  font-weight: bolder;
-  color: #111010;
-  font-size: 14px;
-  width: 250px;
-  line-height: 26px;
-  padding: 0 0 0 6px;
-}
-
-.info-content {
-  width: 250px;
-  padding: 4px;
-  color: #000000;
-  line-height: 23px;
-  font: 12px Helvetica, 'Hiragino Sans GB', 'Microsoft Yahei', '微软雅黑', Arial;
-  background-color: #ffffff ;
-}
 
 .info-content img {
   float: left;
@@ -133,7 +116,25 @@ export default {
   color: #000000 ;
 }
 
-:deep(.amap-info-window) {
+:deep(.amap-info-content .info-title) {
+  font-weight: bolder ;
+  color: #111010 ;
+  font-size: 14px ;
+  width: 250px ;
+  line-height: 26px ;
+  padding: 0 0 0 6px ;
+}
+
+:deep(.amap-info-content .info-content) {
+  width: 250px ;
+  padding: 4px ;
+  color: #000000 ;
+  line-height: 20px ;
+  font: 12px Helvetica, 'Hiragino Sans GB', 'Microsoft Yahei', '微软雅黑', Arial ;
   background-color: #ffffff ;
+}
+
+.amap-info-content amap-info-outer{
+  color: #000000;
 }
 </style>

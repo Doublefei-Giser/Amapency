@@ -176,11 +176,15 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   background-color: white;
-  border-radius: 20px 20px 0 0;
+  border-radius: 25px 25px 0 0;
   padding: 0 20px 20px 20px;
-  box-shadow: 0 -2px 8px rgba(26, 25, 25, 0.1);
+  box-shadow: 
+    0 -4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 -2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 -10px 15px -3px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   transition: transform 0.2s;
+  isolation: isolate;  /* 添加这一行 */
 }
 
 .handle {
@@ -233,6 +237,7 @@ onUnmounted(() => {
 }
 
 .chat-message .bubble {
+  color: #000000;
   display: inline-block;
   padding: 8px 12px;
   border-radius: 5px;
@@ -247,7 +252,8 @@ onUnmounted(() => {
 
 .chat-footer {
   border-top: 1px solid #ddd;
-  padding: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   display: flex;
   justify-content: space-between;
   gap: 10px;
