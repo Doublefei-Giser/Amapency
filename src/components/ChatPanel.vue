@@ -296,22 +296,22 @@ const renderMarkdown = (content: string) => {
   display: inline-block;
   padding: 8px 12px;
   border-radius: 5px;
-  max-width: 70%;
+  max-width: 85%;
   word-wrap: break-word;
   background-color: #e5e5e5;
+  font-size: 0.8rem;
 }
 
 .chat-message.right .bubble {
   background-color: #a0e75a;
 }
-
 .chat-footer {
   border-top: 1px solid #ddd;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: 6px;          /* 从 8px 减小到 6px */
+  padding-bottom: 6px;       /* 从 8px 减小到 6px */
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;                  /* 从 10px 减小到 8px */
 }
 
 .chat-input {
@@ -320,14 +320,14 @@ const renderMarkdown = (content: string) => {
   appearance: none;
   color: #000000;
   flex: 1;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid #ddd;
   border-radius: 5px;
   outline: none;
 }
 
 .chat-send-btn {
-  padding: 5px 15px;
+  padding: 5px 10px;
   border: none;
   background-color: #1773ec;
   color: #fff;
@@ -372,8 +372,15 @@ const renderMarkdown = (content: string) => {
   text-align: left;
 }
 
+.markdown-body :deep(h3) {
+  margin: 0;
+}
 .markdown-body :deep(p) {
   margin: 0;
+}
+.markdown-body :deep(ul) {
+  margin: 0;
+  padding-left: 15px;
 }
 .markdown-body :deep(pre) {
   margin: 8px 0;
@@ -407,17 +414,36 @@ const renderMarkdown = (content: string) => {
 }
 
 .markdown-body :deep(table) {
-  border-collapse: collapse;
+  border-collapse: separate;  /* 改为 separate 以支持圆角 */
+  border-spacing: 0;         /* 确保单元格之间没有间隔 */
   width: 100%;
   margin: 8px 0;
+  border-radius: 8px;        /* 添加整体圆角 */
+  overflow: hidden; 
+  border: 1px solid #3c3b3b;         /* 确保内容不会超出圆角 */
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
-  border: 1px solid #ddd;
+  border: 1px solid #6c6b6b;
   padding: 6px;
 }
 
+/* 处理第一行的圆角 */
+.markdown-body :deep(tr:first-child th:first-child) {
+  border-top-left-radius: 8px;
+}
+.markdown-body :deep(tr:first-child th:last-child) {
+  border-top-right-radius: 8px;
+}
+
+/* 处理最后一行的圆角 */
+.markdown-body :deep(tr:last-child td:first-child) {
+  border-bottom-left-radius: 8px;
+}
+.markdown-body :deep(tr:last-child td:last-child) {
+  border-bottom-right-radius: 8px;
+}
 .markdown-body :deep(blockquote) {
   margin: 8px 0;
   padding-left: 1em;
