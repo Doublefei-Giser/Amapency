@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
-import 'highlight.js/styles/github.css';
+import BaiduAgentClient from '../api';
 
 interface Props {
   initialMessage?: string;
@@ -130,26 +130,66 @@ const sendMessage = async () => {
   await handleResponse(message);
 };
 
+// 创建 BaiduAgentClient 实例
+const client = new BaiduAgentClient('4fANRoEUmLWNNLdCKygrk5lb4M4rqgi6', 'ET5SUAjipQC3XGYTcSR5x06N60kj6yAB');
+
+// 修改 handleResponse 函数
 const handleResponse = async (message: string) => {
   isLoading.value = true;
   transform.value = props.minTransform;
 
   try {
-    // 这里添加与 AI 服务器的通信逻辑
-    // 模拟 AI 响应
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    messages.value.push({
-      type: 'left',
-      content: `收到消息：${message}`
-    });
+    const request = {
+      message: {
+        content: {
+          type: 'text' as const,
+          value: {
+            showText: message
+          }
+        }
+      },
+      source: 'your_appId',
+      from: 'openapi',
+      openId: 'user_123'
+    };
+
+    let responseText = '';
+    for await (const response of client.conversationStream(request)) {
+      if (response.status === 0) {
+        for (const content of response.data.message.content) {
+          if (content.dataType === 'markdown') {
+            responseText += content.data.text;
+            // 实时更新消息
+            if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === 'left') {
+              messages.value[messages.value.length - 1].content = responseText;
+            } else {
+              messages.value.push({
+                type: 'left',
+                content: responseText
+              });
+            }
+            scrollToBottom();
+          }
+        }
+      } else {
+        console.error(`Error: ${response.message}`);
+        messages.value.push({
+          type: 'left',
+          content: '抱歉，发生了一些错误，请稍后重试。'
+        });
+      }
+    }
   } catch (error) {
     console.error('Error:', error);
+    messages.value.push({
+      type: 'left',
+      content: '抱歉，发生了一些错误，请稍后重试。'
+    });
   } finally {
     isLoading.value = false;
     scrollToBottom();
   }
 };
-
 const scrollToBottom = () => {
   if (chatWindowRef.value) {
     chatWindowRef.value.scrollTop = chatWindowRef.value.scrollHeight;
@@ -174,7 +214,7 @@ onUnmounted(() => {
 // 配置 marked
 marked.setOptions({
   breaks: true,    // 允许换行
-  gfm: true,       // 启用 GitHub 风格的 Markdown 
+  gfm: true,       // 启用 GitHub 风格的 Markdown
 });
 
 // 添加 Markdown 渲染函数
@@ -182,8 +222,7 @@ const renderMarkdown = (content: string) => {
   // 处理换行符，确保正确渲染
   const processedContent = content.replace(/\\n/g, '\n').replace(/\n/g, '  \n');
   return marked.parse(processedContent, { breaks: true });
-};
-</script>
+};</script>
 
 <style scoped>
 .panel {
@@ -336,20 +375,23 @@ const renderMarkdown = (content: string) => {
 .markdown-body :deep(p) {
   margin: 0;
 }
-
 .markdown-body :deep(pre) {
   margin: 8px 0;
   padding: 8px;
   background-color: #f6f8fa;
   border-radius: 4px;
   overflow-x: auto;
+  white-space: pre-wrap;  /* 添加这行以确保长代码可以换行 */
+  word-break: break-all;  /* 添加这行以确保长单词可以换行 */
 }
 
 .markdown-body :deep(code) {
   font-family: Consolas, Monaco, 'Andale Mono', monospace;
   font-size: 0.9em;
+  background-color: #f6f8fa;  /* 添加这行为内联代码提供背景色 */
+  padding: 2px 4px;          /* 添加这行为内联代码提供内边距 */
+  border-radius: 3px;        /* 添加这行为内联代码提供圆角 */
 }
-
 .markdown-body :deep(a) {
   color: #0366d6;
   text-decoration: none;
