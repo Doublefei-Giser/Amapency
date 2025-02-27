@@ -77,7 +77,8 @@ export default {
         this.infoWindow.setContent(this.createContent(poiArr[0]))
         this.infoWindow.open(this.map, location)
         
-        this.$emit('place-selected', poiInfo)
+        // 将事件名改为 send-message，直接触发消息发送
+        this.$emit('send-message', poiInfo)
       }
     },
     createContent(poi) {

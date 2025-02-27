@@ -149,7 +149,7 @@ const handleResponse = async (message: string) => {
         }
       },
       source: 'your_appId',
-      from: 'openapi',
+      from: 'openapi' as const,  
       openId: 'user_123'
     };
 
