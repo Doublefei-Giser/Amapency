@@ -285,17 +285,17 @@ const renderMarkdown = (content: string) => {
   overflow-y: auto;
   padding-top: 30px;
 }
-
 .chat-message {
   margin-bottom: 10px;
+  display: flex;
 }
 
 .chat-message.right {
-  text-align: right;
+  justify-content: flex-end;
 }
 
 .chat-message.left {
-  text-align: left;
+  justify-content: flex-start;
 }
 
 .chat-message .bubble {
@@ -307,8 +307,8 @@ const renderMarkdown = (content: string) => {
   word-wrap: break-word;
   background-color: #e5e5e5;
   font-size: 0.8rem;
+  text-align: left;  /* 添加这行确保文本左对齐 */
 }
-
 .chat-message.right .bubble {
   background-color: #a0e75a;
 }
