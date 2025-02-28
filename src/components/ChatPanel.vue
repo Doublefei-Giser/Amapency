@@ -61,6 +61,7 @@ const messages = ref<Message[]>([]);
 const inputMessage = ref('');
 const isLoading = ref(false);
 const transform = ref(0);
+const threadId = ref<string | undefined>(undefined); // 添加 threadId 状态
 
 // DOM 引用
 const panelRef = ref<HTMLElement | null>(null);
@@ -140,6 +141,7 @@ const handleResponse = async (message: string) => {
 
   try {
     const request = {
+      threadId: threadId.value, // 添加 threadId，首次对话为 undefined
       message: {
         content: {
           type: 'text' as const,
@@ -156,6 +158,11 @@ const handleResponse = async (message: string) => {
     let responseText = '';
     for await (const response of client.conversationStream(request)) {
       if (response.status === 0) {
+        // 保存返回的 threadId 用于下次对话
+        if (response.data.message.threadId) {
+          threadId.value = response.data.message.threadId;
+        }
+        
         for (const content of response.data.message.content) {
           if (content.dataType === 'markdown') {
             responseText += content.data.text;
