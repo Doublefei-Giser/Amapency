@@ -3,7 +3,7 @@
 ## 项目简介
 
 Amapency 是一个基于 Vue 3 和 TypeScript 的项目，使用 Vite 作为构建工具。该项目的主要功能是通过点击地图上的 POI（Point of Interest）点，然后传入智能体进行对话获取该 POI 的百科信息，并且可以与大模型进行进一步对话。
-![预览](./public/image/demo.gif)
+![预览](https://raw.githubusercontent.com//Doublefei-Giser/Amapency/blob/main/public/image/demo.gif)
 
 ## 技术栈
 - Vue 3 Typescript Vite
