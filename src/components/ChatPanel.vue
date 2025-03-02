@@ -2,6 +2,7 @@
   <div class="panel" ref="panelRef" :style="panelStyle">
     <div class="handle" ref="handleRef" @mousedown="startDragging" @touchstart="startDragging">
       <div class="bar"></div>
+      <div class="handle-title">地百通</div>
     </div>
     <div class="chat-container">
       <div class="chat-body" ref="chatWindowRef">
@@ -51,9 +52,9 @@ interface Message {
 
 const props = withDefaults(defineProps<Props>(), {
   initialMessage: '',
-  panelHeight: 60,
+  panelHeight: 70,
   minTransform: 0,
-  maxTransform: 55
+  maxTransform: 66
 });
 
 // 状态管理
@@ -237,8 +238,8 @@ const renderMarkdown = (content: string) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: white;
-  border-radius: 25px 25px 0 0;
+  background-color: rgb(255, 255, 255);
+  border-radius: 35px 35px 0 0;
   padding: 0 20px 20px 20px;
   box-shadow: 
     0 -4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -248,12 +249,12 @@ const renderMarkdown = (content: string) => {
   transition: transform 0.2s;
   isolation: isolate;  /* 添加这一行 */
 }
-
 .handle {
   width: 100%;
-  height: 20px;
-  background-color: white;
-  border-radius: 10px 10px 0 0;
+  height: 4.5vh;
+  
+  background-image: linear-gradient(to bottom, rgb(178, 202, 252), white);
+  border-radius: 15px 15px 0 0;
   margin: 0;
   cursor: pointer;
   position: absolute;
@@ -261,18 +262,26 @@ const renderMarkdown = (content: string) => {
   left: 0;
   right: 0;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  box-shadow: 
+    0 -9px 10px -2px rgba(0, 0, 0, 0.1),
+    0 -4px 8px -2px rgba(0, 0, 0, 0.06);
 }
-
 .bar {
   width: 40px;
   height: 5px;
   background-color: #ccc;
   border-radius: 5px;
-  margin: 0 auto;
+  margin: 5px auto 2px;
 }
-
+.handle-title {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
 .chat-container {
   height: 100%;
   display: flex;
@@ -314,11 +323,11 @@ const renderMarkdown = (content: string) => {
 }
 .chat-footer {
   border-top: 1px solid #ddd;
-  padding-top: 6px;          /* 从 8px 减小到 6px */
-  padding-bottom: 6px;       /* 从 8px 减小到 6px */
+  padding-top: 4px;          /* 从 6px 减小到 4px */
+  padding-bottom: 4px;       /* 从 6px 减小到 4px */
   display: flex;
   justify-content: space-between;
-  gap: 8px;                  /* 从 10px 减小到 8px */
+  gap: 6px;                  /* 从 8px 减小到 6px */
 }
 
 .chat-input {
@@ -327,21 +336,22 @@ const renderMarkdown = (content: string) => {
   appearance: none;
   color: #000000;
   flex: 1;
-  padding: 8px;
+  padding: 6px;              /* 从 8px 减小到 6px */
   border: 1px solid #ddd;
   border-radius: 5px;
   outline: none;
+  font-size: 0.9rem;         /* 添加字体大小缩小 */
 }
 
 .chat-send-btn {
-  padding: 5px 10px;
+  padding: 4px 8px;          /* 从 5px 10px 减小到 4px 8px */
   border: none;
   background-color: #1773ec;
   color: #fff;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 0.9rem;         /* 添加字体大小缩小 */
 }
-
 .chat-send-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;

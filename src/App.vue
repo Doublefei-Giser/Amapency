@@ -21,9 +21,9 @@ const chatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
 const initialMessage = ref<string>('');
 
 // 面板配置
-const panelHeight = ref<number>(60);
+const panelHeight = ref<number>(70);
 const minTransform = ref<number>(0);
-const maxTransform = ref<number>(55);
+const maxTransform = ref<number>(66);
 
 const handleMapMessage = (message: string) => {
   initialMessage.value = message;
@@ -53,7 +53,7 @@ html, body {
 /* 地图容器样式 */
 .map {
   width: 100%;
-  height: 95vh;
+  height: 96vh;
 }
 
 /* 聊天面板样式 */
