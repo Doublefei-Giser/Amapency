@@ -1,7 +1,20 @@
 <template>
   <div class="panel" ref="panelRef" :style="panelStyle">
     <div class="handle" ref="handleRef" @mousedown="startDragging" @touchstart="startDragging">
+      <div class="sidebar-toggle" @click.stop="toggleSidebar">
+        <i class="fas fa-bars"></i>
+      </div>
       <div class="bar"></div>
+      <div 
+      v-if="isSidebarOpen" 
+      class="sidebar-overlay" 
+      @click="toggleSidebar"
+    ></div>
+    <Sidebar 
+      :is-open="isSidebarOpen" 
+      :conversations="conversations"
+      @select="loadConversation"
+    />
       <div class="handle-title">地百通</div>
     </div>
     <div class="chat-container">
@@ -30,13 +43,20 @@
         </button>
       </div>
     </div>
+    <Sidebar 
+      :is-open="isSidebarOpen" 
+      :conversations="conversations"
+      @select="loadConversation"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
+import { v4 as uuidv4 } from 'uuid';
 import BaiduAgentClient from '../api';
+import Sidebar from './Sidebar.vue';
 
 interface Props {
   initialMessage?: string;
@@ -135,6 +155,55 @@ const sendMessage = async () => {
 // 创建 BaiduAgentClient 实例
 const client = new BaiduAgentClient('4fANRoEUmLWNNLdCKygrk5lb4M4rqgi6', 'ET5SUAjipQC3XGYTcSR5x06N60kj6yAB');
 
+// 添加侧边栏状态
+const isSidebarOpen = ref(false);
+const conversations = ref<Array<{
+  id: string;
+  messages: Message[];
+  timestamp: number;
+}>>([]);
+
+// 加载历史对话
+onMounted(() => {
+  // 添加现有的事件监听器
+  document.addEventListener('mousemove', handleDragging);
+  document.addEventListener('mouseup', stopDragging);
+  document.addEventListener('touchmove', handleDragging);
+  document.addEventListener('touchend', stopDragging);
+  // 从本地存储加载对话
+  const savedConversations = localStorage.getItem('conversations');
+  if (savedConversations) {
+    conversations.value = JSON.parse(savedConversations);
+  }
+});
+
+// 切换侧边栏
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
+
+const saveConversation = () => {
+  if (messages.value.length > 0) {
+    const conversation = {
+      id: uuidv4(),
+      messages: [...messages.value],
+      timestamp: Date.now()
+    };
+    conversations.value = [conversation, ...conversations.value];
+    localStorage.setItem('conversations', JSON.stringify(conversations.value));
+  }
+};
+
+// 加载选中的对话
+const loadConversation = (conversation: {
+  id: string;
+  messages: Message[];
+  timestamp: number;
+}) => {
+  messages.value = [...conversation.messages];
+  isSidebarOpen.value = false;
+};
+
 // 修改 handleResponse 函数
 const handleResponse = async (message: string) => {
   isLoading.value = true;
@@ -142,7 +211,7 @@ const handleResponse = async (message: string) => {
 
   try {
     const request = {
-      threadId: threadId.value, // 添加 threadId，首次对话为 undefined
+      threadId: threadId.value,
       message: {
         content: {
           type: 'text' as const,
@@ -159,7 +228,6 @@ const handleResponse = async (message: string) => {
     let responseText = '';
     for await (const response of client.conversationStream(request)) {
       if (response.status === 0) {
-        // 保存返回的 threadId 用于下次对话
         if (response.data.message.threadId) {
           threadId.value = response.data.message.threadId;
         }
@@ -167,7 +235,6 @@ const handleResponse = async (message: string) => {
         for (const content of response.data.message.content) {
           if (content.dataType === 'markdown') {
             responseText += content.data.text;
-            // 实时更新消息
             if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === 'left') {
               messages.value[messages.value.length - 1].content = responseText;
             } else {
@@ -187,6 +254,8 @@ const handleResponse = async (message: string) => {
         });
       }
     }
+    // 在对话完成后保存对话
+    saveConversation();
   } catch (error) {
     console.error('Error:', error);
     messages.value.push({
@@ -233,26 +302,33 @@ const renderMarkdown = (content: string) => {
 };</script>
 
 <style scoped>
-.panel {
-  position: absolute;
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgb(255, 255, 255);
-  border-radius: 35px 35px 0 0;
-  padding: 0 20px 20px 20px;
-  box-shadow: 
-    0 -4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 -2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 -10px 15px -3px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  transition: transform 0.2s;
-  isolation: isolate;  /* 添加这一行 */
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+/* 添加新的样式 */
+.sidebar-toggle {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #333;
+  padding: 5px;
+}
+
+.sidebar-toggle:hover {
+  color: #1773ec;
 }
 .handle {
   width: 100%;
   height: 4.5vh;
-  
   background-image: linear-gradient(to bottom, rgb(178, 202, 252), white);
   border-radius: 15px 15px 0 0;
   margin: 0;

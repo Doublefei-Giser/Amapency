@@ -94,12 +94,6 @@ export default {
 </script>
 
 <style scoped>
-.map {
-  width: 100%;
-  height: 96vh;
-}
-
-
 .info-content img {
   float: left;
   margin: 3px;

@@ -62,12 +62,49 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: white;
-  border-radius: 20px 20px 0 0;
+  background-color: rgb(255, 255, 255);
+  border-radius: 35px 35px 0 0;
   padding: 0 20px 20px 20px;
-  box-shadow: 0 -2px 8px rgba(26, 25, 25, 0.1);
+  box-shadow: 
+    0 -4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 -2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 -10px 15px -3px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   transform: translateY(0);
   transition: transform 0.2s;
+  isolation: isolate;
+}
+
+/* 高德地图信息窗体样式 */
+.info-content img {
+  float: left;
+  margin: 3px;
+}
+
+.amap-info-combo .keyword-input {
+  height: auto;
+}
+
+.amap-info-content .info-title {
+  font-weight: bolder;
+  color: #111010;
+  font-size: 14px;
+  width: 250px;
+  line-height: 26px;
+  padding: 0 0 0 6px;
+}
+
+.amap-info-content .info-content {
+  width: 250px;
+  padding: 4px;
+  color: #000000;
+  line-height: 20px;
+  font: 12px Helvetica, 'Hiragino Sans GB', 'Microsoft Yahei', '微软雅黑', Arial;
+  background-color: #ffffff;
+}
+
+.amap-info-content {
+  background-color: #ffffff;
+  color: #000000;
 }
 </style>
