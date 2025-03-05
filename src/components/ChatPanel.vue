@@ -18,6 +18,12 @@
       <div class="handle-title">地百通</div>
     </div>
     <div class="chat-container">
+      <div class="new-chat-container">
+        <button class="new-chat-btn" @click="startNewConversation">
+          <i class="fas fa-comment-alt"></i>
+          <span>新建对话</span>
+        </button>
+      </div>
       <div class="chat-body" ref="chatWindowRef">
         <div v-for="(message, index) in messages" :key="index" 
              :class="['chat-message', message.type]">
@@ -364,7 +370,39 @@ const renderMarkdown = (content: string) => {
   flex-direction: column;
   margin-top: 20px;
 }
-
+.new-chat-container {
+  position: absolute;
+  bottom: 38px;  /* 调整到输入框上方 */
+  left: 20px;
+  
+  z-index: 1;
+}
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 添加居中对齐 */
+  gap: 4px;
+  padding: 1px 4px; 
+  border: 1px solid #cbcbcb;
+  border-radius: 5px;
+  background-color: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.7rem;
+  height: 25px; /* 添加固定高度 */
+  outline: none;
+  -webkit-tap-highlight-color: transparent; 
+}
+.new-chat-btn:active {
+  transform: scale(0.98); 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+  color: #1773ec; 
+}
+.new-chat-btn i {
+  font-size: 0.7rem;
+  color: #9f9f9f;
+}
 .chat-body {
   flex: 1;
   overflow-y: auto;
@@ -374,15 +412,12 @@ const renderMarkdown = (content: string) => {
   margin-bottom: 10px;
   display: flex;
 }
-
 .chat-message.right {
   justify-content: flex-end;
 }
-
 .chat-message.left {
   justify-content: flex-start;
 }
-
 .chat-message .bubble {
   color: #000000;
   display: inline-block;
@@ -399,13 +434,12 @@ const renderMarkdown = (content: string) => {
 }
 .chat-footer {
   border-top: 1px solid #ddd;
-  padding-top: 4px;          /* 从 6px 减小到 4px */
+  padding-top: 30px;          /* 从 6px 减小到 4px */
   padding-bottom: 4px;       /* 从 6px 减小到 4px */
   display: flex;
   justify-content: space-between;
   gap: 6px;                  /* 从 8px 减小到 6px */
 }
-
 .chat-input {
   background: #ffffff;
   -webkit-appearance: none;
@@ -418,7 +452,6 @@ const renderMarkdown = (content: string) => {
   outline: none;
   font-size: 0.9rem;         /* 添加字体大小缩小 */
 }
-
 .chat-send-btn {
   padding: 4px 8px;          /* 从 5px 10px 减小到 4px 8px */
   border: none;
@@ -432,12 +465,10 @@ const renderMarkdown = (content: string) => {
   background-color: #ccc;
   cursor: not-allowed;
 }
-
 .chat-send-btn.loading {
   position: relative;
   color: transparent;
 }
-
 .chat-send-btn.loading::after {
   content: '';
   position: absolute;
@@ -451,20 +482,9 @@ const renderMarkdown = (content: string) => {
   border-radius: 50%;
   animation: button-loading-spinner 1s linear infinite;
 }
-
-@keyframes button-loading-spinner {
-  from {
-    transform: rotate(0turn);
-  }
-  to {
-    transform: rotate(1turn);
-  }
-}
-
 .markdown-body {
   text-align: left;
 }
-
 .markdown-body :deep(h3) {
   margin: 0;
 }
@@ -484,7 +504,6 @@ const renderMarkdown = (content: string) => {
   white-space: pre-wrap;  /* 添加这行以确保长代码可以换行 */
   word-break: break-all;  /* 添加这行以确保长单词可以换行 */
 }
-
 .markdown-body :deep(code) {
   font-family: Consolas, Monaco, 'Andale Mono', monospace;
   font-size: 0.9em;
@@ -496,16 +515,13 @@ const renderMarkdown = (content: string) => {
   color: #0366d6;
   text-decoration: none;
 }
-
 .markdown-body :deep(a:hover) {
   text-decoration: underline;
 }
-
 .markdown-body :deep(img) {
   max-width: 100%;
   height: auto;
 }
-
 .markdown-body :deep(table) {
   border-collapse: separate;  /* 改为 separate 以支持圆角 */
   border-spacing: 0;         /* 确保单元格之间没有间隔 */
@@ -515,13 +531,11 @@ const renderMarkdown = (content: string) => {
   overflow: hidden; 
   border: 1px solid #3c3b3b;         /* 确保内容不会超出圆角 */
 }
-
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
   border: 1px solid #6c6b6b;
   padding: 6px;
 }
-
 /* 处理第一行的圆角 */
 .markdown-body :deep(tr:first-child th:first-child) {
   border-top-left-radius: 8px;
@@ -529,7 +543,6 @@ const renderMarkdown = (content: string) => {
 .markdown-body :deep(tr:first-child th:last-child) {
   border-top-right-radius: 8px;
 }
-
 /* 处理最后一行的圆角 */
 .markdown-body :deep(tr:last-child td:first-child) {
   border-bottom-left-radius: 8px;
@@ -543,7 +556,6 @@ const renderMarkdown = (content: string) => {
   border-left: 4px solid #ddd;
   color: #666;
 }
-
 .markdown-body :deep(br) {
   display: block;
   content: "";
