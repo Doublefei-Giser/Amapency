@@ -209,7 +209,16 @@ const loadConversation = (conversation: {
   messages.value = [...conversation.messages];
   isSidebarOpen.value = false;
 };
-
+const startNewConversation = () => {
+  // 清空当前消息
+  messages.value = [];
+  // 重置输入框
+  inputMessage.value = '';
+  // 重置线程ID
+  threadId.value = undefined;
+  // 滚动到底部
+  scrollToBottom();
+};
 // 修改 handleResponse 函数
 const handleResponse = async (message: string) => {
   isLoading.value = true;
@@ -423,7 +432,7 @@ const renderMarkdown = (content: string) => {
   display: inline-block;
   padding: 8px 12px;
   border-radius: 5px;
-  max-width: 85%;
+  max-width: 100%;
   word-wrap: break-word;
   background-color: #e5e5e5;
   font-size: 0.8rem;
