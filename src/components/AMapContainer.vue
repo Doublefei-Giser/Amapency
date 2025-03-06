@@ -14,7 +14,19 @@ export default {
     }
   },
   mounted() {
-    this.initMap()
+    // 设置安全密钥
+    window._AMapSecurityConfig = {
+      securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE
+    }
+
+    // 动态加载高德地图脚本
+    const script = document.createElement('script')
+    script.type = 'text/javascript'
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${import.meta.env.VITE_AMAP_KEY}&plugin=AMap.PlaceSearch,AMap.InfoWindow`
+    script.onload = () => {
+      this.initMap()
+    }
+    document.head.appendChild(script)
   },
   methods: {
     initMap() {

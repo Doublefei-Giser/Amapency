@@ -132,5 +132,3 @@ export type {
   ConversationResponse
 };
 
-// 导出客户端类
-export default BaiduAgentClient;

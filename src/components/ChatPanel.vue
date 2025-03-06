@@ -61,7 +61,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
-import BaiduAgentClient from '../api';
+import { agentClient } from '../api';
 import Sidebar from './Sidebar.vue';
 
 interface Props {
@@ -159,7 +159,7 @@ const sendMessage = async () => {
 };
 
 // 创建 BaiduAgentClient 实例
-const client = new BaiduAgentClient('4fANRoEUmLWNNLdCKygrk5lb4M4rqgi6', 'ET5SUAjipQC3XGYTcSR5x06N60kj6yAB');
+const client = agentClient;
 
 // 添加侧边栏状态
 const isSidebarOpen = ref(false);
