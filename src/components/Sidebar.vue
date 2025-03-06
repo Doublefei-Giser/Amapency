@@ -34,6 +34,7 @@ interface Conversation {
     type: 'left' | 'right';
     content: string;
   }>;
+  threadId?: string; // 添加可选的threadId
   timestamp: number;
 }
 

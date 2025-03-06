@@ -154,7 +154,7 @@ const sendMessage = async () => {
     type: 'right',
     content: message
   });
-
+  scrollToBottom();
   await handleResponse(message);
 };
 
@@ -190,35 +190,63 @@ const toggleSidebar = () => {
 
 const saveConversation = () => {
   if (messages.value.length > 0) {
-    const conversation = {
-      id: uuidv4(),
-      messages: [...messages.value],
-      timestamp: Date.now()
-    };
-    conversations.value = [conversation, ...conversations.value];
+    // 如果是现有会话，更新它
+    if (currentConversationId.value) {
+      const index = conversations.value.findIndex(c => c.id === currentConversationId.value);
+      if (index !== -1) {
+        conversations.value[index].messages = [...messages.value];
+        conversations.value[index].timestamp = Date.now();
+        // 将更新的会话移到顶部
+        const updatedConversation = conversations.value.splice(index, 1)[0];
+        conversations.value.unshift(updatedConversation);
+      }
+    } else {
+      // 创建新会话
+      const conversation = {
+        id: uuidv4(),
+        messages: [...messages.value],
+        threadId: threadId.value, // 保存threadId
+        timestamp: Date.now()
+      };
+      currentConversationId.value = conversation.id;
+      conversations.value = [conversation, ...conversations.value];
+    }
+    
     localStorage.setItem('conversations', JSON.stringify(conversations.value));
   }
 };
 
-// 加载选中的对话
 const loadConversation = (conversation: {
   id: string;
   messages: Message[];
+  threadId?: string; // 添加可选的threadId
   timestamp: number;
 }) => {
   messages.value = [...conversation.messages];
+  threadId.value = conversation.threadId; // 恢复threadId
+  currentConversationId.value = conversation.id; // 设置当前会话ID
   isSidebarOpen.value = false;
 };
+
+// 修改新建对话函数
 const startNewConversation = () => {
+  // 如果当前有对话且有变化，先保存
+  if (currentConversationId.value && messages.value.length > 0) {
+    saveConversation();
+  }
+  
   // 清空当前消息
   messages.value = [];
   // 重置输入框
   inputMessage.value = '';
   // 重置线程ID
   threadId.value = undefined;
+  // 重置当前会话ID
+  currentConversationId.value = undefined;
   // 滚动到底部
   scrollToBottom();
 };
+
 // 修改 handleResponse 函数
 const handleResponse = async (message: string) => {
   isLoading.value = true;
@@ -287,6 +315,7 @@ const scrollToBottom = () => {
     chatWindowRef.value.scrollTop = chatWindowRef.value.scrollHeight;
   }
 };
+const currentConversationId = ref<string | undefined>(undefined);
 
 // 生命周期钩子
 onMounted(() => {
@@ -294,6 +323,13 @@ onMounted(() => {
   document.addEventListener('mouseup', stopDragging);
   document.addEventListener('touchmove', handleDragging);
   document.addEventListener('touchend', stopDragging);
+  const savedConversations = localStorage.getItem('conversations');
+  if (savedConversations) {
+    conversations.value = JSON.parse(savedConversations);
+  }
+  
+  // 创建新会话
+  startNewConversation();
 });
 
 onUnmounted(() => {
@@ -501,6 +537,10 @@ const renderMarkdown = (content: string) => {
   margin: 0;
 }
 .markdown-body :deep(ul) {
+  margin: 0;
+  padding-left: 15px;
+}
+.markdown-body :deep(ol) {
   margin: 0;
   padding-left: 15px;
 }
