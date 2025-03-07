@@ -20,8 +20,13 @@
     <div class="chat-container">
       <div class="new-chat-container">
         <button class="new-chat-btn" @click="startNewConversation">
-          <i class="fas fa-comment-alt"></i>
+          <i class="fa-regular fa-message"></i>
           <span>新建对话</span>
+        </button>
+        <button class="new-chat-btn" 
+        :class="{ 'deep-thinking-active': isDeepThinkingActive }"  @click="startDeepThinking">
+          <i class="fa-solid fa-hexagon-nodes"></i>
+          <span>深度思考（R1）</span>
         </button>
       </div>
       <div class="chat-body" ref="chatWindowRef">
@@ -61,7 +66,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
-import { agentClient } from '../api';
+import { normalClient, deepThinkingClient, } from '../api';
 import Sidebar from './Sidebar.vue';
 
 interface Props {
@@ -158,9 +163,7 @@ const sendMessage = async () => {
   await handleResponse(message);
 };
 
-// 创建 BaiduAgentClient 实例
-const client = agentClient;
-
+let client = normalClient;
 // 添加侧边栏状态
 const isSidebarOpen = ref(false);
 const conversations = ref<Array<{
@@ -246,6 +249,14 @@ const startNewConversation = () => {
   // 滚动到底部
   scrollToBottom();
 };
+const isDeepThinkingActive = ref(false);
+
+const startDeepThinking = () => {
+  isDeepThinkingActive.value = !isDeepThinkingActive.value;
+  // 直接切换客户端实例
+  client = isDeepThinkingActive.value ? deepThinkingClient : normalClient;
+  console.log(isDeepThinkingActive.value ? '已切换到深度思考模式' : '已切换到普通模式');
+};
 
 // 修改 handleResponse 函数
 const handleResponse = async (message: string) => {
@@ -269,6 +280,8 @@ const handleResponse = async (message: string) => {
     };
 
     let responseText = '';
+    let reasoningText = '';
+    
     for await (const response of client.conversationStream(request)) {
       if (response.status === 0) {
         if (response.data.message.threadId) {
@@ -278,15 +291,25 @@ const handleResponse = async (message: string) => {
         for (const content of response.data.message.content) {
           if (content.dataType === 'markdown') {
             responseText += content.data.text;
-            if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === 'left') {
-              messages.value[messages.value.length - 1].content = responseText;
+            // 如果有推理内容，将其添加为引用块
+            if (reasoningText) {
+              const formattedResponse = `> **思考过程：**\n> ${reasoningText.replace(/\n/g, '\n> ')}\n\n${responseText}`;
+              updateOrAddMessage('left', formattedResponse);
             } else {
-              messages.value.push({
-                type: 'left',
-                content: responseText
-              });
+              updateOrAddMessage('left', responseText);
             }
             scrollToBottom();
+          } else if (content.dataType === 'reasoning') {
+            // 收集推理内容
+            if (content.data.value) {
+              reasoningText += content.data.value;
+              // 如果只有推理内容，先显示出来
+              if (!responseText) {
+                const formattedReasoning = `> **思考中：**\n> ${reasoningText.replace(/\n/g, '\n> ')}`;
+                updateOrAddMessage('left', formattedReasoning);
+                scrollToBottom();
+              }
+            }
           }
         }
       } else {
@@ -308,6 +331,18 @@ const handleResponse = async (message: string) => {
   } finally {
     isLoading.value = false;
     scrollToBottom();
+  }
+};
+
+// 添加辅助函数来更新或添加消息
+const updateOrAddMessage = (type: 'left' | 'right', content: string) => {
+  if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === type) {
+    messages.value[messages.value.length - 1].content = content;
+  } else {
+    messages.value.push({
+      type,
+      content
+    });
   }
 };
 const scrollToBottom = () => {
@@ -419,8 +454,9 @@ const renderMarkdown = (content: string) => {
   position: absolute;
   bottom: 38px;  /* 调整到输入框上方 */
   left: 20px;
-  
   z-index: 1;
+  display: flex;
+  gap: 8px; 
 }
 .new-chat-btn {
   display: flex;
@@ -445,8 +481,16 @@ const renderMarkdown = (content: string) => {
   color: #1773ec; 
 }
 .new-chat-btn i {
-  font-size: 0.7rem;
-  color: #9f9f9f;
+  font-size: 0.9rem;
+  color: #373737;
+}
+.new-chat-btn.deep-thinking-active {
+  background-color: #1773ec;
+  color: #fff;
+}
+
+.new-chat-btn.deep-thinking-active i {
+  color: #fff;
 }
 .chat-body {
   flex: 1;
@@ -529,6 +573,17 @@ const renderMarkdown = (content: string) => {
 }
 .markdown-body {
   text-align: left;
+}
+.markdown-body :deep(h1) {
+  margin: 0;
+  font-size: 1rem;  /* 调整 h1 的大小 */
+  line-height: 1.4;
+}
+
+.markdown-body :deep(h2) {
+  margin: 0;
+  font-size: 0.9rem;  /* 调整 h2 的大小 */
+  line-height: 1.3;
 }
 .markdown-body :deep(h3) {
   margin: 0;

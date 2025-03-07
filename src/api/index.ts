@@ -23,10 +23,11 @@ interface ConversationResponse {
   data: {
     message: {
       content: Array<{
-        dataType: 'markdown' | 'uiData';
+        dataType: 'markdown' | 'uiData' | 'reasoning';  // 添加 'reasoning' 类型
         isFinished: boolean;
         data: {
           text?: string;
+          value?: string;   // 添加 value 字段
           [key: string]: any;
         };
       }>;
@@ -121,10 +122,16 @@ class BaiduAgentClient {
 }
 
 // 然后再创建实例
-export const agentClient = new BaiduAgentClient(
+export const normalClient = new BaiduAgentClient(
   import.meta.env.VITE_BAIDU_APP_ID,
   import.meta.env.VITE_BAIDU_SECRET_KEY
 );
+
+export const deepThinkingClient = new BaiduAgentClient(
+  import.meta.env.VITE_DEEPSEEKR1,
+  import.meta.env.VITE_DEEPSEEKR1_KEY
+);
+
 
 // 导出类型定义
 export type {
