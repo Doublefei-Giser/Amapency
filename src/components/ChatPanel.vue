@@ -17,6 +17,21 @@
     />
       <div class="handle-title">地百通</div>
     </div>
+    <!-- 添加自定义确认对话框 -->
+    <div v-if="showConfirmDialog" class="confirm-dialog-overlay">
+      <div class="confirm-dialog">
+        <div class="confirm-dialog-header">
+          <span>切换模式</span>
+        </div>
+        <div class="confirm-dialog-body">
+          切换模式将清空当前对话内容，是否继续？
+        </div>
+        <div class="confirm-dialog-footer">
+          <button class="confirm-dialog-btn cancel" @click="cancelModeSwitch">取消</button>
+          <button class="confirm-dialog-btn confirm" @click="confirmModeSwitch">确定</button>
+        </div>
+      </div>
+    </div>
     <div class="chat-container">
       <div class="new-chat-container">
         <button class="new-chat-btn" @click="startNewConversation">
@@ -251,7 +266,32 @@ const startNewConversation = () => {
 };
 const isDeepThinkingActive = ref(false);
 
+// 添加确认对话框状态
+const showConfirmDialog = ref(false);
+
 const startDeepThinking = () => {
+  // 如果当前有消息，显示自定义确认弹窗
+  if (messages.value.length > 0) {
+    showConfirmDialog.value = true;
+  } else {
+    // 如果没有消息，直接切换模式
+    toggleDeepThinkingMode();
+  }
+};
+
+// 确认切换模式
+const confirmModeSwitch = () => {
+  showConfirmDialog.value = false;
+  toggleDeepThinkingMode();
+  startNewConversation();
+};
+// 取消切换模式，仅关闭确认对话框
+const cancelModeSwitch = () => {
+  showConfirmDialog.value = false;
+};
+
+// 抽取切换模式的逻辑为单独函数
+const toggleDeepThinkingMode = () => {
   isDeepThinkingActive.value = !isDeepThinkingActive.value;
   // 直接切换客户端实例
   client = isDeepThinkingActive.value ? deepThinkingClient : normalClient;
@@ -599,6 +639,9 @@ const renderMarkdown = (content: string) => {
   margin: 0;
   padding-left: 15px;
 }
+.markdown-body :deep(blockquote) {
+  font-size: 0.7rem;
+}
 .markdown-body :deep(pre) {
   margin: 8px 0;
   padding: 8px;
@@ -665,4 +708,74 @@ const renderMarkdown = (content: string) => {
   content: "";
   margin: 8px 0;
 }
+
+/* 添加确认对话框样式 */
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background-color: white;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.confirm-dialog-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  font-weight: 500;
+  color: #333;
+}
+
+.confirm-dialog-body {
+  padding: 16px;
+  color: #666;
+}
+
+.confirm-dialog-footer {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #eee;
+}
+
+.confirm-dialog-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.confirm-dialog-btn.cancel {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.confirm-dialog-btn.cancel:hover {
+  background-color: #e8e8e8;
+}
+
+.confirm-dialog-btn.confirm {
+  background-color: #1773ec;
+  color: white;
+}
+
+.confirm-dialog-btn.confirm:hover {
+  background-color: #1366d6;
+}
+
 </style>
