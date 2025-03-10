@@ -33,17 +33,6 @@
       </div>
     </div>
     <div class="chat-container">
-      <div class="new-chat-container">
-        <button class="new-chat-btn" @click="startNewConversation">
-          <i class="fa-regular fa-message"></i>
-          <span>新建对话</span>
-        </button>
-        <button class="new-chat-btn" 
-        :class="{ 'deep-thinking-active': isDeepThinkingActive }"  @click="startDeepThinking">
-          <i class="fa-solid fa-hexagon-nodes"></i>
-          <span>深度思考（R1）</span>
-        </button>
-      </div>
       <div class="chat-body" ref="chatWindowRef">
         <div v-for="(message, index) in messages" :key="index" 
              :class="['chat-message', message.type]">
@@ -51,23 +40,13 @@
           <div class="bubble markdown-body" v-else v-html="renderMarkdown(message.content)"></div>
         </div>
       </div>
-      <div class="chat-footer">
-        <input 
-          type="text" 
-          class="chat-input" 
-          v-model="inputMessage" 
-          placeholder="输入消息..."
-          @keyup.enter="sendMessage"
-        >
-        <button 
-          class="chat-send-btn" 
-          :class="{ loading: isLoading }" 
-          @click="sendMessage"
-          :disabled="isLoading || !inputMessage.trim()"
-        >
-          发送
-        </button>
-      </div>
+      <ChatFooter 
+        :is-loading="isLoading"
+        :is-deep-thinking-active="isDeepThinkingActive"
+        @send="sendMessage"
+        @new-conversation="startNewConversation"
+        @deep-thinking="startDeepThinking"
+      />
     </div>
     <Sidebar 
       :is-open="isSidebarOpen" 
@@ -83,6 +62,7 @@ import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 import { normalClient, deepThinkingClient, } from '../api';
 import Sidebar from './Sidebar.vue';
+import ChatFooter from './ChatFooter.vue';
 
 interface Props {
   initialMessage?: string;
@@ -164,11 +144,8 @@ const stopDragging = () => {
 };
 
 // 消息处理
-const sendMessage = async () => {
-  if (!inputMessage.value.trim() || isLoading.value) return;
-
-  const message = inputMessage.value;
-  inputMessage.value = '';
+const sendMessage = async (message: string) => {
+  if (!message.trim() || isLoading.value) return;
   
   messages.value.push({
     type: 'right',
@@ -266,7 +243,7 @@ const startNewConversation = () => {
 };
 const isDeepThinkingActive = ref(false);
 
-// 添加确认对话框状态
+
 const showConfirmDialog = ref(false);
 
 const startDeepThinking = () => {
@@ -490,48 +467,7 @@ const renderMarkdown = (content: string) => {
   flex-direction: column;
   margin-top: 20px;
 }
-.new-chat-container {
-  position: absolute;
-  bottom: 38px;  /* 调整到输入框上方 */
-  left: 20px;
-  z-index: 1;
-  display: flex;
-  gap: 8px; 
-}
-.new-chat-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center; /* 添加居中对齐 */
-  gap: 4px;
-  padding: 1px 4px; 
-  border: 1px solid #cbcbcb;
-  border-radius: 5px;
-  background-color: #ffffff;
-  color: #000000;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.7rem;
-  height: 25px; /* 添加固定高度 */
-  outline: none;
-  -webkit-tap-highlight-color: transparent; 
-}
-.new-chat-btn:active {
-  transform: scale(0.98); 
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
-  color: #1773ec; 
-}
-.new-chat-btn i {
-  font-size: 0.9rem;
-  color: #373737;
-}
-.new-chat-btn.deep-thinking-active {
-  background-color: #1773ec;
-  color: #fff;
-}
 
-.new-chat-btn.deep-thinking-active i {
-  color: #fff;
-}
 .chat-body {
   flex: 1;
   overflow-y: auto;
@@ -560,56 +496,6 @@ const renderMarkdown = (content: string) => {
 }
 .chat-message.right .bubble {
   background-color: #a0e75a;
-}
-.chat-footer {
-  border-top: 1px solid #ddd;
-  padding-top: 30px;          /* 从 6px 减小到 4px */
-  padding-bottom: 4px;       /* 从 6px 减小到 4px */
-  display: flex;
-  justify-content: space-between;
-  gap: 6px;                  /* 从 8px 减小到 6px */
-}
-.chat-input {
-  background: #ffffff;
-  -webkit-appearance: none;
-  appearance: none;
-  color: #000000;
-  flex: 1;
-  padding: 6px;              /* 从 8px 减小到 6px */
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  outline: none;
-  font-size: 0.9rem;         /* 添加字体大小缩小 */
-}
-.chat-send-btn {
-  padding: 4px 8px;          /* 从 5px 10px 减小到 4px 8px */
-  border: none;
-  background-color: #1773ec;
-  color: #fff;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;         /* 添加字体大小缩小 */
-}
-.chat-send-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-.chat-send-btn.loading {
-  position: relative;
-  color: transparent;
-}
-.chat-send-btn.loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
-  border: 2px solid #fff;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: button-loading-spinner 1s linear infinite;
 }
 .markdown-body {
   text-align: left;
