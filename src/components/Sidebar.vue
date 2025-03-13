@@ -35,6 +35,7 @@ interface Conversation {
     content: string;
   }>;
   threadId?: string; // 添加可选的threadId
+  isDeepThinking?: boolean; // 添加可选的模式状态
   timestamp: number;
 }
 

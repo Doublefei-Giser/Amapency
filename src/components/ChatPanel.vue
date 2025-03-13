@@ -37,7 +37,18 @@
         <div v-for="(message, index) in messages" :key="index" 
              :class="['chat-message', message.type]">
           <div class="bubble" v-if="message.type === 'right'">{{ message.content }}</div>
-          <div class="bubble markdown-body" v-else v-html="renderMarkdown(message.content)"></div>
+          <div v-else>
+            <!-- 修改思考标签显示方式 -->
+            <div class="thinking-header" v-if="message.isThinking || message.hasReasoning">
+              <div class="thinking-label-bubble">
+                {{ message.isThinking ? '思考中' : '思考过程' }}
+                <i class="fas fa-angle-down" 
+                   @click="toggleReasoning(index)" 
+                   :class="{ 'fa-rotate-180': !reasoningVisible[index] }"></i>
+              </div>
+            </div>
+            <div class="bubble markdown-body" v-html="renderMarkdown(getDisplayContent(message, index))"></div>
+          </div>
         </div>
       </div>
       <ChatFooter 
@@ -74,7 +85,10 @@ interface Props {
 interface Message {
   type: 'left' | 'right';
   content: string;
+  isThinking?: boolean;
+  hasReasoning?: boolean;
 }
+
 
 const props = withDefaults(defineProps<Props>(), {
   initialMessage: '',
@@ -89,6 +103,10 @@ const inputMessage = ref('');
 const isLoading = ref(false);
 const transform = ref(0);
 const threadId = ref<string | undefined>(undefined); // 添加 threadId 状态
+const reasoningVisible = ref<Record<number, boolean>>({}); // 添加控制思考内容显示的状态
+const toggleReasoning = (index: number) => {
+  reasoningVisible.value[index] = !reasoningVisible.value[index];
+};
 
 // DOM 引用
 const panelRef = ref<HTMLElement | null>(null);
@@ -161,6 +179,8 @@ const isSidebarOpen = ref(false);
 const conversations = ref<Array<{
   id: string;
   messages: Message[];
+  threadId?: string;
+  isDeepThinking?: boolean;
   timestamp: number;
 }>>([]);
 
@@ -191,6 +211,8 @@ const saveConversation = () => {
       if (index !== -1) {
         conversations.value[index].messages = [...messages.value];
         conversations.value[index].timestamp = Date.now();
+        conversations.value[index].threadId = threadId.value; // 确保更新threadId
+        conversations.value[index].isDeepThinking = isDeepThinkingActive.value; // 保存当前模式状态
         // 将更新的会话移到顶部
         const updatedConversation = conversations.value.splice(index, 1)[0];
         conversations.value.unshift(updatedConversation);
@@ -201,6 +223,7 @@ const saveConversation = () => {
         id: uuidv4(),
         messages: [...messages.value],
         threadId: threadId.value, // 保存threadId
+        isDeepThinking: isDeepThinkingActive.value, // 保存当前模式状态
         timestamp: Date.now()
       };
       currentConversationId.value = conversation.id;
@@ -210,16 +233,27 @@ const saveConversation = () => {
     localStorage.setItem('conversations', JSON.stringify(conversations.value));
   }
 };
-
 const loadConversation = (conversation: {
   id: string;
   messages: Message[];
   threadId?: string; // 添加可选的threadId
+  isDeepThinking?: boolean; // 添加可选的模式状态
   timestamp: number;
 }) => {
   messages.value = [...conversation.messages];
   threadId.value = conversation.threadId; // 恢复threadId
   currentConversationId.value = conversation.id; // 设置当前会话ID
+  
+  // 恢复对话模式
+  if (conversation.isDeepThinking !== undefined) {
+    // 只有当需要切换模式时才执行
+    if (isDeepThinkingActive.value !== conversation.isDeepThinking) {
+      isDeepThinkingActive.value = conversation.isDeepThinking;
+      client = isDeepThinkingActive.value ? deepThinkingClient : normalClient;
+      console.log(isDeepThinkingActive.value ? '已切换到深度思考模式' : '已切换到普通模式');
+    }
+  }
+  
   isSidebarOpen.value = false;
 };
 
@@ -310,8 +344,12 @@ const handleResponse = async (message: string) => {
             responseText += content.data.text;
             // 如果有推理内容，将其添加为引用块
             if (reasoningText) {
-              const formattedResponse = `> **思考过程：**\n> ${reasoningText.replace(/\n/g, '\n> ')}\n\n${responseText}`;
-              updateOrAddMessage('left', formattedResponse);
+              const formattedResponse = `> ${reasoningText.replace(/\n/g, '\n> ')}\n\n${responseText}`;
+              updateOrAddMessage('left', formattedResponse, false, true); // 设置 hasReasoning 为 true
+              // 默认设置该消息的推理内容为可见
+              if (messages.value.length > 0) {
+                reasoningVisible.value[messages.value.length - 1] = true;
+              }
             } else {
               updateOrAddMessage('left', responseText);
             }
@@ -322,8 +360,12 @@ const handleResponse = async (message: string) => {
               reasoningText += content.data.value;
               // 如果只有推理内容，先显示出来
               if (!responseText) {
-                const formattedReasoning = `> **思考中：**\n> ${reasoningText.replace(/\n/g, '\n> ')}`;
-                updateOrAddMessage('left', formattedReasoning);
+                const formattedReasoning = `> ${reasoningText.replace(/\n/g, '\n> ')}`;
+                updateOrAddMessage('left', formattedReasoning, true, false); // 设置 isThinking 为 true
+                // 默认设置该消息的推理内容为可见
+                if (messages.value.length > 0) {
+                  reasoningVisible.value[messages.value.length - 1] = true;
+                }
                 scrollToBottom();
               }
             }
@@ -351,17 +393,38 @@ const handleResponse = async (message: string) => {
   }
 };
 
-// 添加辅助函数来更新或添加消息
-const updateOrAddMessage = (type: 'left' | 'right', content: string) => {
+// 修改 updateOrAddMessage 函数
+const updateOrAddMessage = (type: 'left' | 'right', content: string, isThinking = false, hasReasoning = false) => {
   if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === type) {
     messages.value[messages.value.length - 1].content = content;
+    messages.value[messages.value.length - 1].isThinking = isThinking;
+    messages.value[messages.value.length - 1].hasReasoning = hasReasoning;
   } else {
     messages.value.push({
       type,
-      content
+      content,
+      isThinking,
+      hasReasoning
     });
   }
 };
+// 添加处理显示内容的方法
+const getDisplayContent = (message: Message, index: number) => {
+  if (!message.hasReasoning || !message.content.includes('\n\n')) {
+    return message.content;
+  }
+  
+  // 如果是推理内容且需要折叠
+  if (!reasoningVisible.value[index]) {
+    // 分离引用块和正常回答
+    const parts = message.content.split('\n\n');
+    // 只返回非引用块部分
+    return parts.slice(1).join('\n\n');
+  }
+  
+  return message.content;
+};
+
 const scrollToBottom = () => {
   if (chatWindowRef.value) {
     chatWindowRef.value.scrollTop = chatWindowRef.value.scrollHeight;
@@ -496,6 +559,12 @@ const renderMarkdown = (content: string) => {
 }
 .chat-message.right .bubble {
   background-color: #a0e75a;
+}
+.thinking-label {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
 }
 .markdown-body {
   text-align: left;
@@ -663,5 +732,29 @@ const renderMarkdown = (content: string) => {
 .confirm-dialog-btn.confirm:hover {
   background-color: #1366d6;
 }
+.thinking-header {
+  margin-bottom: 4px;
+}
 
+.thinking-label-bubble {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.thinking-label-bubble i {
+  margin-left: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.thinking-label-bubble i:hover {
+  color: #1773ec;
+}
 </style>
