@@ -57,6 +57,7 @@
         @send="sendMessage"
         @new-conversation="startNewConversation"
         @deep-thinking="startDeepThinking"
+        @stop-response="stopResponse"
       />
     </div>
     <Sidebar 
@@ -308,12 +309,33 @@ const toggleDeepThinkingMode = () => {
   client = isDeepThinkingActive.value ? deepThinkingClient : normalClient;
   console.log(isDeepThinkingActive.value ? '已切换到深度思考模式' : '已切换到普通模式');
 };
+const abortController = ref<AbortController | null>(null);
+
+// 修改停止响应的方法
+const stopResponse = () => {
+  if (abortController.value) {
+    abortController.value.abort();
+    abortController.value = null;
+    isLoading.value = false;
+    
+    // 添加一条消息表示响应已被中断
+    if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === 'left') {
+      messages.value[messages.value.length - 1].content += '\n\n*回复已被中断*';
+    }
+    
+    // 确保保存当前对话状态
+    saveConversation();
+  }
+};
 
 // 修改 handleResponse 函数
 const handleResponse = async (message: string) => {
   isLoading.value = true;
   transform.value = props.minTransform;
-
+  
+  // 确保创建新的 AbortController 实例
+  abortController.value = new AbortController();
+  
   try {
     const request = {
       threadId: threadId.value,
@@ -327,60 +349,79 @@ const handleResponse = async (message: string) => {
       },
       source: 'your_appId',
       from: 'openapi' as const,  
-      openId: 'user_123'
+      openId: 'user_123',
+      signal: abortController.value.signal  // 确保信号被正确传递
     };
 
     let responseText = '';
     let reasoningText = '';
     
-    for await (const response of client.conversationStream(request)) {
-      if (response.status === 0) {
-        if (response.data.message.threadId) {
-          threadId.value = response.data.message.threadId;
+    // 使用 try-catch 包裹循环，以便正确处理中断异常
+    try {
+      for await (const response of client.conversationStream(request)) {
+        // 检查是否已中断
+        if (abortController.value === null) {
+          break;
         }
         
-        for (const content of response.data.message.content) {
-          if (content.dataType === 'markdown') {
-            responseText += content.data.text;
-            // 如果有推理内容，将其添加为引用块
-            if (reasoningText) {
-              const formattedResponse = `> ${reasoningText.replace(/\n/g, '\n> ')}\n\n${responseText}`;
-              updateOrAddMessage('left', formattedResponse, false, true); // 设置 hasReasoning 为 true
-              // 默认设置该消息的推理内容为可见
-              if (messages.value.length > 0) {
-                reasoningVisible.value[messages.value.length - 1] = true;
-              }
-            } else {
-              updateOrAddMessage('left', responseText);
-            }
-            scrollToBottom();
-          } else if (content.dataType === 'reasoning') {
-            // 收集推理内容
-            if (content.data.value) {
-              reasoningText += content.data.value;
-              // 如果只有推理内容，先显示出来
-              if (!responseText) {
-                const formattedReasoning = `> ${reasoningText.replace(/\n/g, '\n> ')}`;
-                updateOrAddMessage('left', formattedReasoning, true, false); // 设置 isThinking 为 true
+        if (response.status === 0) {
+          if (response.data.message.threadId) {
+            threadId.value = response.data.message.threadId;
+          }
+          
+          for (const content of response.data.message.content) {
+            if (content.dataType === 'markdown') {
+              responseText += content.data.text;
+              // 如果有推理内容，将其添加为引用块
+              if (reasoningText) {
+                const formattedResponse = `> ${reasoningText.replace(/\n/g, '\n> ')}\n\n${responseText}`;
+                updateOrAddMessage('left', formattedResponse, false, true);
                 // 默认设置该消息的推理内容为可见
                 if (messages.value.length > 0) {
                   reasoningVisible.value[messages.value.length - 1] = true;
                 }
-                scrollToBottom();
+              } else {
+                updateOrAddMessage('left', responseText);
+              }
+              scrollToBottom();
+            } else if (content.dataType === 'reasoning') {
+              // 收集推理内容
+              if (content.data.value) {
+                reasoningText += content.data.value;
+                // 如果只有推理内容，先显示出来
+                if (!responseText) {
+                  const formattedReasoning = `> ${reasoningText.replace(/\n/g, '\n> ')}`;
+                  updateOrAddMessage('left', formattedReasoning, true, false);
+                  // 默认设置该消息的推理内容为可见
+                  if (messages.value.length > 0) {
+                    reasoningVisible.value[messages.value.length - 1] = true;
+                  }
+                  scrollToBottom();
+                }
               }
             }
           }
+        } else {
+          console.error(`Error: ${response.message}`);
+          messages.value.push({
+            type: 'left',
+            content: '抱歉，发生了一些错误，请稍后重试。'
+          });
         }
+      }
+    } catch (err) {
+      // 检查是否是中断导致的错误
+      if ((err as Error).name === 'AbortError') {
+        console.log('请求已被用户中断');
       } else {
-        console.error(`Error: ${response.message}`);
-        messages.value.push({
-          type: 'left',
-          content: '抱歉，发生了一些错误，请稍后重试。'
-        });
+        throw err; // 重新抛出非中断错误
       }
     }
+    
     // 在对话完成后保存对话
-    saveConversation();
+    if (abortController.value !== null) { // 只有在非中断情况下才保存
+      saveConversation();
+    }
   } catch (error) {
     console.error('Error:', error);
     messages.value.push({
@@ -390,6 +431,8 @@ const handleResponse = async (message: string) => {
   } finally {
     isLoading.value = false;
     scrollToBottom();
+    // 确保清理 abortController
+    abortController.value = null;
   }
 };
 

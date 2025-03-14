@@ -23,10 +23,11 @@
       <button 
         class="chat-send-btn" 
         :class="{ loading: isLoading }" 
-        @click="handleSend"
-        :disabled="isLoading || !inputMessage.trim()"
+        @click="isLoading ? handleStop() : handleSend()"
+        :disabled="!isLoading && !inputMessage.trim()"
       >
-        发送
+        <span v-if="!isLoading">发送</span>
+        <i v-else class="fa-regular fa-circle-stop"></i>
       </button>
     </div>
   </div>
@@ -45,6 +46,7 @@ const emit = defineEmits<{
   (e: 'send', message: string): void;
   (e: 'newConversation'): void;
   (e: 'deepThinking'): void;
+  (e: 'stopResponse'): void;
 }>();
 
 const inputMessage = ref('');
@@ -61,6 +63,10 @@ const handleNewConversation = () => {
 
 const handleDeepThinking = () => {
   emit('deepThinking');
+};
+
+const handleStop = () => {
+  emit('stopResponse');
 };
 </script>
 
@@ -156,17 +162,15 @@ const handleDeepThinking = () => {
   color: transparent;
 }
 
-.chat-send-btn.loading::after {
+.chat-send-btn.loading::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
-  border: 2px solid #fff;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: button-loading-spinner 1s linear infinite;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(23, 115, 236, 0.8);
+  border-radius: 5px;
+  z-index: 1;
 }
 </style>

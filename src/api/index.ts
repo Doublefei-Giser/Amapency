@@ -60,13 +60,15 @@ class BaiduAgentClient {
     const url = `${this.baseUrl}/assistant/conversation?appId=${this.appId}&secretKey=${this.secretKey}`;
     
     try {
+      // 添加 signal 到 fetch 请求中
       const response = await fetch(url, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream'
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
+        signal: (request as any).signal  // 通过类型断言传递 AbortSignal
       });
 
       if (!response.ok) {
@@ -83,6 +85,11 @@ class BaiduAgentClient {
 
       try {
         while (true) {
+          // 在每次读取前检查是否已中断
+          if ((request as any).signal && (request as any).signal.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+          }
+          
           const { done, value } = await reader.read();
           if (done) break;
 
@@ -112,9 +119,15 @@ class BaiduAgentClient {
           }
         }
       } finally {
+        // 确保在结束时释放读取器锁
         reader.releaseLock();
       }
     } catch (error) {
+      // 如果是中断错误，则正常处理
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('Stream aborted by user');
+        return;
+      }
       console.error('Error in conversation stream:', error);
       throw error;
     }
