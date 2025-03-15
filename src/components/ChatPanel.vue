@@ -546,6 +546,21 @@ const renderMarkdown = (content: string) => {
   box-shadow: 
     0 -9px 10px -2px rgba(0, 0, 0, 0.1),
     0 -4px 8px -2px rgba(0, 0, 0, 0.06);
+  -webkit-tap-highlight-color: transparent; /* 添加这行，禁用移动端点击时的高亮效果 */
+  user-select: none; /* 添加这行，防止文本被选中 */
+}
+
+/* 添加这些样式来处理触摸状态 */
+.handle:active,
+.handle:hover {
+  background-image: linear-gradient(to bottom, rgb(178, 202, 252), white);
+}
+
+/* 添加媒体查询，专门处理移动端 */
+@media (hover: none) and (pointer: coarse) {
+  .handle {
+    -webkit-touch-callout: none; /* 禁用iOS长按菜单 */
+  }
 }
 .bar {
   width: 40px;
