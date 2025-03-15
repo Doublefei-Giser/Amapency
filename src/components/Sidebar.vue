@@ -12,20 +12,36 @@
         v-for="(conversation, index) in conversations" 
         :key="index"
         class="conversation-item"
-        @click="selectConversation(conversation)"
       >
-        <div class="conversation-preview">
-          {{ getConversationPreview(conversation) }}
+        <div class="conversation-content" @click="selectConversation(conversation)">
+          <div class="conversation-preview">
+            {{ getConversationPreview(conversation) }}
+          </div>
+          <div class="conversation-time">
+            {{ formatTime(conversation.timestamp) }}
+          </div>
         </div>
-        <div class="conversation-time">
-          {{ formatTime(conversation.timestamp) }}
-        </div>
+        <i 
+          class="fa-regular fa-trash-can delete-icon"
+          @click="confirmDelete(conversation)"
+        ></i>
       </div>
     </div>
+    
+    <ConfirmDialog
+      :is-visible="showDeleteConfirm"
+      title="删除对话"
+      message="确定要删除这条对话吗？此操作不可恢复。"
+      @confirm="handleDelete"
+      @cancel="cancelDelete"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import ConfirmDialog from './ConfirmDialog.vue';
+
 import { defineProps, defineEmits } from 'vue';
 
 interface Conversation {
@@ -46,6 +62,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'select', conversation: Conversation): void;
+  (e: 'delete', conversationId: string): void;
 }>();
 
 const selectConversation = (conversation: Conversation) => {
@@ -53,13 +70,34 @@ const selectConversation = (conversation: Conversation) => {
 };
 
 const getConversationPreview = (conversation: Conversation) => {
-  const lastMessage = conversation.messages[conversation.messages.length - 1];
-  return lastMessage ? lastMessage.content.slice(0, 50) + (lastMessage.content.length > 50 ? '...' : '') : '';
+  const firstUserMessage = conversation.messages.find(msg => msg.type === 'right');
+  return firstUserMessage ? firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '') : '';
 };
 
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   return `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
+
+const showDeleteConfirm = ref(false);
+const pendingDeleteConversation = ref<Conversation | null>(null);
+
+const confirmDelete = (conversation: Conversation) => {
+  pendingDeleteConversation.value = conversation;
+  showDeleteConfirm.value = true;
+};
+
+const handleDelete = () => {
+  if (pendingDeleteConversation.value) {
+    emit('delete', pendingDeleteConversation.value.id);
+  }
+  showDeleteConfirm.value = false;
+  pendingDeleteConversation.value = null;
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  pendingDeleteConversation.value = null;
 };
 </script>
 
@@ -71,9 +109,12 @@ const formatTime = (timestamp: number) => {
   width: 300px;
   height: 100vh;
   background-color: #fff;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 -9px 10px -2px rgba(0, 0, 0, 0.1),
+    0 -4px 8px -2px rgba(0, 0, 0, 0.06);
   transition: left 0.3s ease;
-  z-index: 1001; /* 增加 z-index 确保在遮罩层之上 */
+  z-index: 1001;
+  border-radius: 15px 0 0 15px; /* 添加圆角效果 */
 }
 
 .sidebar-open {
@@ -104,14 +145,18 @@ const formatTime = (timestamp: number) => {
 }
 
 .conversation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 12px;
   border-bottom: 1px solid #eee;
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.conversation-item:hover {
-  background-color: #f5f5f5;
+.conversation-content {
+  flex: 1;
+  cursor: pointer;
+  margin-right: 8px; /* 添加右边距，与删除图标保持间距 */
 }
 
 .conversation-preview {
@@ -124,5 +169,21 @@ const formatTime = (timestamp: number) => {
 .conversation-time {
   font-size: 0.8rem;
   color: #666;
+}
+
+.conversation-item:hover {
+  background-color: #f5f5f5;
+}
+
+.delete-icon {
+  color: #999;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.2s;
+  font-size: 0.9rem; /* 调整图标大小 */
+}
+
+.delete-icon:hover {
+  color: #ff4d4f;
 }
 </style>

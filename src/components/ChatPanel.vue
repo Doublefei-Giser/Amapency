@@ -14,6 +14,7 @@
       :is-open="isSidebarOpen" 
       :conversations="conversations"
       @select="loadConversation"
+      @delete="deleteConversation"
     />
       <div class="handle-title">地百通</div>
     </div>
@@ -52,11 +53,6 @@
         @stop-response="stopResponse"
       />
     </div>
-    <Sidebar 
-      :is-open="isSidebarOpen" 
-      :conversations="conversations"
-      @select="loadConversation"
-    />
   </div>
 </template>
 
@@ -501,7 +497,21 @@ const renderMarkdown = (content: string) => {
   // 处理换行符，确保正确渲染
   const processedContent = content.replace(/\\n/g, '\n').replace(/\n/g, '  \n');
   return marked.parse(processedContent, { breaks: true });
-};</script>
+};
+
+const deleteConversation = (conversationId: string) => {
+  // 从conversations数组中删除对话
+  conversations.value = conversations.value.filter(c => c.id !== conversationId);
+  
+  // 如果删除的是当前对话，清空当前对话
+  if (currentConversationId.value === conversationId) {
+    startNewConversation();
+  }
+  
+  // 更新本地存储
+  localStorage.setItem('conversations', JSON.stringify(conversations.value));
+};
+</script>
 
 <style scoped>
 .sidebar-overlay {
