@@ -159,18 +159,15 @@ const handleStop = () => {
 
 .chat-send-btn.loading {
   position: relative;
-  color: transparent;
+  color: #fff;
+  background-color: #dc3545;
+  padding: 4px 8px;  /* 新增：确保与普通状态按钮padding一致 */
+  min-width: 48px;   /* 新增：设置最小宽度，确保大小一致 */
 }
 
-.chat-send-btn.loading::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(23, 115, 236, 0.8);
-  border-radius: 5px;
-  z-index: 1;
+.chat-send-btn.loading i {
+  position: relative;
+  z-index: 2;
+  font-size: 0.9rem;  /* 修改：与普通按钮字体大小保持一致 */
 }
 </style>
