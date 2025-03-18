@@ -1,6 +1,7 @@
 <template>
-  <div v-if="isVisible" class="confirm-dialog-overlay">
-    <div class="confirm-dialog">
+  <teleport to="body">
+    <div v-if="isVisible" class="confirm-dialog-overlay">
+      <div class="confirm-dialog">
       <div class="confirm-dialog-header">
         <span>{{ title }}</span>
       </div>
@@ -13,6 +14,7 @@
       </div>
     </div>
   </div>
+  </teleport>
 </template>
 
 <script setup lang="ts">
