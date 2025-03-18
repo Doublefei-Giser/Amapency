@@ -140,8 +140,19 @@ export default {
   font: 12px Helvetica, 'Hiragino Sans GB', 'Microsoft Yahei', '微软雅黑', Arial ;
   background-color: #ffffff ;
 }
+:deep(.amap-copyright) {
+  color: #000000 ;
+  font:  Helvetica, 'Hiragino Sans GB', 'Microsoft Yahei', '微软雅黑', Arial ;
+}
 
 .amap-info-content amap-info-outer{
   color: #000000;
+}
+
+:deep(.amap-geolocation) {
+  top: 10px;
+  right: 10px;
+  bottom: auto;
+  left: auto;
 }
 </style>

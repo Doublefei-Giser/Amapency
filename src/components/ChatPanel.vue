@@ -530,7 +530,7 @@ const deleteConversation = (conversationId: string) => {
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   color: #333;
   padding: 5px;
 }
