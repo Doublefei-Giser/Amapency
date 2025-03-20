@@ -71,7 +71,7 @@ html, body {
     0 -10px 15px -3px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   transform: translateY(0);
-  transition: transform 0.2s;
+  transition: transform 0.1s;
   isolation: isolate;
 }
 

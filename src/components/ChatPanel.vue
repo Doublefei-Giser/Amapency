@@ -138,13 +138,14 @@ const handleDragging = (e: MouseEvent | TouchEvent) => {
   if (!isDragging.value) return;
   const currentY = e instanceof MouseEvent ? e.clientY : e.touches[0].clientY;
   const dy = currentY - startY.value;
-
-  if (Math.abs(dy) > 10) {
-    transform.value = Math.min(
-      props.maxTransform,
-      Math.max(props.minTransform, startTransform.value + dy / 5)
-    );
-  }
+  
+  // 移除最小移动距离判断，直接计算transform值
+  const windowHeight = window.innerHeight;
+  const movePercent = (dy / windowHeight) * 100*1.2;
+  transform.value = Math.min(
+    props.maxTransform,
+    Math.max(props.minTransform, startTransform.value + movePercent)
+  );
 };
 
 const stopDragging = () => {
