@@ -429,9 +429,25 @@ const handleResponse = async (message: string) => {
 // 修改 updateOrAddMessage 函数
 const updateOrAddMessage = (type: 'left' | 'right', content: string, isThinking = false, hasReasoning = false) => {
   if (messages.value.length > 0 && messages.value[messages.value.length - 1].type === type) {
-    messages.value[messages.value.length - 1].content = content;
-    messages.value[messages.value.length - 1].isThinking = isThinking;
-    messages.value[messages.value.length - 1].hasReasoning = hasReasoning;
+    // 使用 setTimeout 逐步显示内容
+    let currentContent = messages.value[messages.value.length - 1].content;
+    const newContent = content;
+    const interval = 20; 
+    let index = currentContent.length;
+
+    const showNextChar = () => {
+      if (index < newContent.length) {
+        currentContent += newContent[index];
+        messages.value[messages.value.length - 1].content = currentContent;
+        index++;
+        setTimeout(showNextChar, interval);
+      } else {
+        messages.value[messages.value.length - 1].isThinking = isThinking;
+        messages.value[messages.value.length - 1].hasReasoning = hasReasoning;
+      }
+    };
+
+    showNextChar();
   } else {
     messages.value.push({
       type,
