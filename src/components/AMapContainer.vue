@@ -1,16 +1,30 @@
 <template>
   <div class="map" id="container"></div>
+  <ConfirmDialog
+    :is-visible="showLocationDialog"
+    title="位置服务"
+    message="是否允许使用IP定位服务来获取您的位置？"
+    @confirm="handleLocationConfirm"
+    @cancel="handleLocationCancel"
+  />
 </template>
 
 <script>
+import ConfirmDialog from './ConfirmDialog.vue'
+
 export default {
   name: 'AMapContainer',
+  components: {
+    ConfirmDialog
+  },
   data() {
     return {
       map: null,
       placeSearch: null,
       infoWindow: null,
-      markers: []
+      markers: [],
+      showLocationDialog: false,
+      defaultCenter: [113.324361, 23.10841]
     }
   },
   mounted() {
@@ -24,18 +38,31 @@ export default {
     script.type = 'text/javascript'
     script.src = `https://webapi.amap.com/maps?v=2.0&key=${import.meta.env.VITE_AMAP_KEY}&plugin=AMap.PlaceSearch,AMap.InfoWindow`
     script.onload = () => {
-      this.initMap()
+      this.showLocationDialog = true
     }
     document.head.appendChild(script)
   },
   methods: {
-    initMap() {
-      this.map = new AMap.Map('container', {
+    handleLocationConfirm() {
+      this.showLocationDialog = false
+      this.initMap(true)
+    },
+    handleLocationCancel() {
+      this.showLocationDialog = false
+      this.initMap(false)
+    },
+    initMap(useIpLocation) {
+      const mapOptions = {
         resizeEnable: true,
-        center: [113.324361, 23.10841],
         zoom: 13,
         isHotspot: true
-      })
+      }
+      
+      if (!useIpLocation) {
+        mapOptions.center = this.defaultCenter
+      }
+      
+      this.map = new AMap.Map('container', mapOptions)
 
       this.placeSearch = new AMap.PlaceSearch()
       this.infoWindow = new AMap.InfoWindow({
