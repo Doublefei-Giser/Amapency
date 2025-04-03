@@ -432,7 +432,7 @@ const updateOrAddMessage = (type: 'left' | 'right', content: string, isThinking 
     // 使用 setTimeout 逐步显示内容
     let currentContent = messages.value[messages.value.length - 1].content;
     const newContent = content;
-    const interval = 20; 
+    const interval = 15; 
     let index = currentContent.length;
 
     const showNextChar = () => {

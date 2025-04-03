@@ -39,16 +39,11 @@ interface ConversationResponse {
 }
 
 class BaiduAgentClient {
-  private readonly appId: string;
-  private readonly secretKey: string;
-  private readonly baseUrl: string = 'https://agentapi.baidu.com';
+  private readonly isDeepThinking: boolean;
+  private readonly baseUrl: string = 'http://localhost:3000';
 
-  constructor(appId: string, secretKey: string) {
-    if (!appId || !secretKey) {
-      throw new Error('AppId and SecretKey are required');
-    }
-    this.appId = appId;
-    this.secretKey = secretKey;
+  constructor(isDeepThinking: boolean = false) {
+    this.isDeepThinking = isDeepThinking;
   }
 
   /**
@@ -57,7 +52,7 @@ class BaiduAgentClient {
    * @returns 异步生成器，用于获取流式响应
    */
   async *conversationStream(request: ConversationRequest): AsyncGenerator<ConversationResponse, void, unknown> {
-    const url = `${this.baseUrl}/assistant/conversation?appId=${this.appId}&secretKey=${this.secretKey}`;
+    const url = `${this.baseUrl}/api/conversation`;
     
     try {
       // 添加 signal 到 fetch 请求中
@@ -67,7 +62,7 @@ class BaiduAgentClient {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream'
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify({ ...request, isDeepThinking: this.isDeepThinking }),
         signal: (request as any).signal  // 通过类型断言传递 AbortSignal
       });
 
@@ -134,16 +129,9 @@ class BaiduAgentClient {
   }
 }
 
-// 然后再创建实例
-export const normalClient = new BaiduAgentClient(
-  import.meta.env.VITE_BAIDU_APP_ID,
-  import.meta.env.VITE_BAIDU_SECRET_KEY
-);
-
-export const deepThinkingClient = new BaiduAgentClient(
-  import.meta.env.VITE_DEEPSEEKR1,
-  import.meta.env.VITE_DEEPSEEKR1_KEY
-);
+// 创建实例
+export const normalClient = new BaiduAgentClient();
+export const deepThinkingClient = new BaiduAgentClient(true);
 
 
 // 导出类型定义
