@@ -28,9 +28,9 @@ export default {
     }
   },
   mounted() {
-    // 设置安全密钥
+    // 设置安全密钥和代理服务器
     window._AMapSecurityConfig = {
-      securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE
+      serviceHost: 'http://localhost:3000/_AMapService'
     }
 
     // 动态加载高德地图脚本

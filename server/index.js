@@ -65,6 +65,7 @@ app.post('/api/conversation', async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');  // 添加这行防止Nginx缓冲
 
     // 添加错误处理
     response.body.on('error', (error) => {
@@ -91,6 +92,86 @@ app.post('/api/conversation', async (req, res) => {
     res.status(500).json({ 
       error: 'Internal Server Error',
       details: error.message 
+    });
+  }
+});
+
+// 修改高德地图代理路由
+app.use('/_AMapService', async (req, res) => {
+  try {
+    // 获取原始URL路径
+    const originalPath = req.path.replace('/_AMapService', '');
+    
+    // 处理JSONP回调
+    const callback = req.query.callback;
+    delete req.query.callback;
+    
+    // 添加安全密钥
+    const queryParams = new URLSearchParams({
+      ...req.query,
+      jscode: process.env.VITE_AMAP_SECURITY_CODE
+    });
+    
+    // 构建目标URL
+    const targetUrl = `https://restapi.amap.com${originalPath}?${queryParams.toString()}`;
+    
+    // 转发请求（增加超时处理和必要参数）
+    const response = await fetch(targetUrl, {
+      timeout: 5000,
+      headers: {
+        'Accept': req.headers.accept || 'application/json'
+      }
+    });
+    
+    // 统一获取响应文本内容
+    const responseText = await response.text();
+    
+    // 处理JSONP响应
+    if (callback) {
+      res.set({
+        'Content-Type': 'application/javascript; charset=UTF-8',
+        'Cache-Control': 'no-store'
+      });
+
+      try {
+        // 新增JSONP有效性检查
+        if (!/^{.*}$/.test(responseText)) {
+          throw new Error('Invalid JSONP response format');
+        }
+        return res.send(`${callback}(${responseText})`);
+      } catch (e) {
+        console.error('JSONP格式异常:', { responseText });
+        return res.send(`${callback}({status: '0', info: 'invalid response format'})`);
+      }
+    }
+
+    // 处理普通响应（新增内容类型判断）
+    try {
+      const data = JSON.parse(responseText);
+      if (data.status !== '1') {
+        res.status(400);
+      }
+      res.json(data);
+    } catch (e) {
+      console.error('JSON解析失败:', { 
+        url: targetUrl,
+        response: responseText 
+      });
+      res.status(500).json({
+        status: '0',
+        info: 'invalid json format'
+      });
+    }
+
+  } catch (error) {
+    console.error('高德地图代理错误:', {
+      url: targetUrl,
+      error: error.stack // 打印完整堆栈
+    });
+    // 返回符合高德格式的错误响应
+    res.status(500).json({ 
+      status: '0',
+      info: error.message.includes('timeout') ? '请求超时' : '代理服务异常'
     });
   }
 });
