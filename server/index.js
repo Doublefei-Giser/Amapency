@@ -176,6 +176,29 @@ app.use('/_AMapService', async (req, res) => {
   }
 });
 
+// 添加高德地图初始化代理
+app.get('/api/amap/init', async (req, res) => {
+  try {
+    const response = await fetch(`https://webapi.amap.com/maps?v=2.0&key=${process.env.VITE_AMAP_KEY}&plugin=AMap.PlaceSearch,AMap.InfoWindow`);
+    const jsContent = await response.text();
+    
+    // 替换掉原来的key参数，改为使用我们的代理服务
+    const modifiedContent = jsContent.replace(
+      /https:\/\/restapi\.amap\.com/g, 
+      `${req.protocol}://${req.get('host')}/_AMapService`
+    );
+    
+    res.set('Content-Type', 'application/javascript');
+    res.send(modifiedContent);
+  } catch (error) {
+    console.error('高德地图初始化代理错误:', error);
+    res.status(500).json({ 
+      status: '0',
+      info: '代理服务异常'
+    });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
